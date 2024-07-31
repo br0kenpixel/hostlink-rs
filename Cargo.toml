@@ -1,0 +1,9 @@
+[package]
+name = "hostlink"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+derive_more = { version = "0.99.18", default-features = false, features = ["display"] }
+serialport = "4.4.0"
+thiserror = "1.0.63"
