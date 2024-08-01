@@ -162,7 +162,6 @@ impl Message {
             .ok_or(ProtocolError::MissingNodeId)?
             .parse()?;
         let node_id = NodeId::new(node_id)?;
-        dbg!(node_id);
 
         let header_code_chars = cmd_iter
             .next()
