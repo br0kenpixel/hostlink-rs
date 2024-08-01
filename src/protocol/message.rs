@@ -113,7 +113,7 @@ impl Message {
     }
 
     pub fn as_device_error(self) -> Result<DeviceError, ProtocolError> {
-        let string: String = self.params.clone().iter().collect();
+        let string: String = self.params.iter().collect();
 
         DeviceError::try_from(string.as_str())
     }

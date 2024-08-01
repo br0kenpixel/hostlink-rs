@@ -70,7 +70,7 @@ pub enum DeviceError {
 }
 
 impl DeviceError {
-    pub const fn to_result(self) -> Result<(), DeviceError> {
+    pub const fn to_result(self) -> Result<(), Self> {
         if matches!(self, Self::None) {
             Ok(())
         } else {
@@ -78,6 +78,7 @@ impl DeviceError {
         }
     }
 
+    #[must_use]
     pub const fn is_ok(self) -> bool {
         self.to_result().is_ok()
     }
