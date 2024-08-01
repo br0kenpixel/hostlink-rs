@@ -39,4 +39,10 @@ pub enum Error {
     /// Test command's message block contains invalid characters.
     #[error("Message block has illegal characters")]
     InvalidTestData,
+
+    #[error("Unknown error code: '{0}{1}'")]
+    UnknownErrorCode(char, char),
+
+    #[error("Invalid error code length")]
+    ErrorCodeBadLength,
 }

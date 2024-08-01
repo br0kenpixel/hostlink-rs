@@ -1,4 +1,5 @@
-use super::Error;
+use super::ProtocolError;
+use crate::device::DeviceError;
 use derive_more::Display;
 use std::{
     ops::{Deref, DerefMut},
@@ -7,7 +8,7 @@ use std::{
 
 /// A Hotlink command type.
 #[derive(Debug, Display, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum CommandKind {
+pub enum MessageKind {
     #[display(fmt = "IR/SR AREA READ")]
     IrSrAreaRead,
     #[display(fmt = "LR AREA READ")]
@@ -76,7 +77,7 @@ pub enum CommandKind {
 
 /// Stores a command's parameters as ASCII values.
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct CommandParams(Vec<char>);
+pub struct MessageParams(Vec<char>);
 
 /// Represents a Node ID - i.e. a number between 0 and 99.
 #[derive(Debug, Display, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -85,34 +86,40 @@ pub struct NodeId(u8);
 
 /// A complete Hotlink command.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Command {
+pub struct Message {
     /// Node ID
     node: NodeId,
     /// Command type
-    kind: CommandKind,
+    kind: MessageKind,
     /// Arguments
-    params: CommandParams,
+    params: MessageParams,
 }
 
-impl Command {
+impl Message {
     /// Creates a new command from the specified node ID and arguments.
     #[must_use]
-    pub const fn new(node: NodeId, kind: CommandKind, params: CommandParams) -> Self {
+    pub const fn new(node: NodeId, kind: MessageKind, params: MessageParams) -> Self {
         Self { node, kind, params }
     }
 
     /// Creates a new command with no arguments from the specified node ID.
     #[must_use]
-    pub const fn new_with_empty_params(node: NodeId, kind: CommandKind) -> Self {
+    pub const fn new_with_empty_params(node: NodeId, kind: MessageKind) -> Self {
         Self {
             node,
             kind,
-            params: CommandParams::new(),
+            params: MessageParams::new(),
         }
     }
 
+    pub fn as_device_error(self) -> Result<DeviceError, ProtocolError> {
+        let string: String = self.params.clone().iter().collect();
+
+        DeviceError::try_from(string.as_str())
+    }
+
     /// Serializes the command into a string that can be sent to a PLC.
-    pub fn serialize(self) -> Result<Box<str>, Error> {
+    pub fn serialize(self) -> Result<Box<str>, ProtocolError> {
         let mut buffer = String::with_capacity(10);
 
         // begin
@@ -141,18 +148,18 @@ impl Command {
         self.node = node;
     }
 
-    pub fn parse(cmd: &str) -> Result<Self, Error> {
+    pub fn parse(cmd: &str) -> Result<Self, ProtocolError> {
         let mut cmd_iter = cmd.chars();
 
         if cmd_iter.next() != Some('@') {
-            return Err(Error::MissingAtSymbol);
+            return Err(ProtocolError::MissingAtSymbol);
         }
 
         let node_id: u8 = cmd_iter
             .next()
             .zip(cmd_iter.next())
             .map(|(first, last)| format!("{first}{last}"))
-            .ok_or(Error::MissingNodeId)?
+            .ok_or(ProtocolError::MissingNodeId)?
             .parse()?;
         let node_id = NodeId::new(node_id)?;
         dbg!(node_id);
@@ -161,20 +168,20 @@ impl Command {
             .next()
             .zip(cmd_iter.next())
             .map(|(first, last)| format!("{first}{last}"))
-            .ok_or(Error::MissingHeaderCode)?;
+            .ok_or(ProtocolError::MissingHeaderCode)?;
 
-        let command_kind = CommandKind::from_str(&header_code_chars)?;
+        let command_kind = MessageKind::from_str(&header_code_chars)?;
         let mut rest: String = cmd_iter.collect();
 
         if rest.pop().zip(rest.pop()) != Some(('\r', '*')) {
-            return Err(Error::MissingTerminator);
+            return Err(ProtocolError::MissingTerminator);
         }
 
         // we won't store the FCS, but only chceck if it's there
         rest.pop()
             .zip(rest.pop())
             .map(|(last, first)| format!("{first}{last}"))
-            .ok_or(Error::MissingFcs)?;
+            .ok_or(ProtocolError::MissingFcs)?;
 
         let params: Vec<char> = rest.chars().collect();
 
@@ -182,7 +189,7 @@ impl Command {
     }
 }
 
-impl CommandParams {
+impl MessageParams {
     /// Creates an empty argument set.
     #[must_use]
     pub const fn new() -> Self {
@@ -190,25 +197,25 @@ impl CommandParams {
     }
 }
 
-impl From<Box<str>> for CommandParams {
+impl From<Box<str>> for MessageParams {
     fn from(value: Box<str>) -> Self {
         Self(value.chars().collect())
     }
 }
 
-impl From<&str> for CommandParams {
+impl From<&str> for MessageParams {
     fn from(value: &str) -> Self {
         Self(value.chars().collect())
     }
 }
 
-impl From<Vec<char>> for CommandParams {
+impl From<Vec<char>> for MessageParams {
     fn from(value: Vec<char>) -> Self {
         Self(value)
     }
 }
 
-impl Deref for CommandParams {
+impl Deref for MessageParams {
     type Target = [char];
 
     fn deref(&self) -> &Self::Target {
@@ -224,13 +231,13 @@ impl Deref for NodeId {
     }
 }
 
-impl DerefMut for CommandParams {
+impl DerefMut for MessageParams {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl CommandKind {
+impl MessageKind {
     /// Returns the command code.
     #[must_use]
     pub const fn code(self) -> &'static str {
@@ -271,8 +278,8 @@ impl CommandKind {
     }
 }
 
-impl FromStr for CommandKind {
-    type Err = Error;
+impl FromStr for MessageKind {
+    type Err = ProtocolError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -308,7 +315,7 @@ impl FromStr for CommandKind {
             "RP" => Ok(Self::ProgramRead),
             "WP" => Ok(Self::ProgramWrite),
             "QQ" => Ok(Self::CompoundCommand),
-            _ => Err(Error::UnknownCommand(s.into())),
+            _ => Err(ProtocolError::UnknownCommand(s.into())),
         }
     }
 }
@@ -316,9 +323,9 @@ impl FromStr for CommandKind {
 impl NodeId {
     /// Safely constructs a Node ID from the specified value.
     /// If the value is higher than 99, an error will be returned.
-    pub fn new(value: u8) -> Result<Self, Error> {
+    pub fn new(value: u8) -> Result<Self, ProtocolError> {
         if !(0..=99).contains(&value) {
-            return Err(Error::IllegalNodeId(value));
+            return Err(ProtocolError::IllegalNodeId(value));
         }
 
         Ok(Self(value))

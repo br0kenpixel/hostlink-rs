@@ -1,10 +1,9 @@
-mod command;
 mod easy;
 mod error;
 /// FCS Checksum calculation and types.
 pub mod fcs;
-mod response;
+mod message;
 
-pub use command::{Command, CommandKind, CommandParams, NodeId};
 pub use easy::EasyCommand;
-pub use error::Error;
+pub use error::Error as ProtocolError;
+pub use message::{Message, MessageKind, MessageParams, NodeId};

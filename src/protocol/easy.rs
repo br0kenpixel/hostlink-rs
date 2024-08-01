@@ -1,4 +1,4 @@
-use super::{Command, CommandKind, Error, NodeId};
+use super::{Message, MessageKind, NodeId, ProtocolError};
 use derive_more::Display;
 
 /// A simplified representation of a command.
@@ -13,14 +13,14 @@ pub enum EasyCommand {
 
 impl EasyCommand {
     /// Construct a `Test` command with the given data.
-    pub fn make_test<S: AsRef<str>>(data: S) -> Result<Self, Error> {
+    pub fn make_test<S: AsRef<str>>(data: S) -> Result<Self, ProtocolError> {
         let data = data.as_ref();
 
         if !data
             .chars()
             .all(|ch| ch.is_ascii_alphanumeric() || ch.is_ascii_punctuation())
         {
-            return Err(Error::InvalidTestData);
+            return Err(ProtocolError::InvalidTestData);
         }
 
         Ok(Self::Test(data.into()))
@@ -34,21 +34,21 @@ impl EasyCommand {
 
     /// Perform conversion into [`Command`](Command).
     #[must_use]
-    pub fn into_command(self, node: NodeId) -> Command {
+    pub fn into_command(self, node: NodeId) -> Message {
         let kind = self.kind();
 
         match self {
-            Self::Test(data) => Command::new(node, kind, data.into()),
-            Self::StatusRead => Command::new_with_empty_params(node, kind),
+            Self::Test(data) => Message::new(node, kind, data.into()),
+            Self::StatusRead => Message::new_with_empty_params(node, kind),
         }
     }
 
     /// Get the command type.
     #[must_use]
-    pub const fn kind(&self) -> CommandKind {
+    pub const fn kind(&self) -> MessageKind {
         match self {
-            Self::Test(..) => CommandKind::Test,
-            Self::StatusRead => CommandKind::StatusRead,
+            Self::Test(..) => MessageKind::Test,
+            Self::StatusRead => MessageKind::StatusRead,
         }
     }
 }

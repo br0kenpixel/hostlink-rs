@@ -1,29 +1,29 @@
-use hostlink::protocol::{Command, CommandKind, CommandParams, NodeId};
+use hostlink::protocol::{Message, MessageKind, MessageParams, NodeId};
 
 #[test]
 fn deserialize_1() {
-    let original = Command::new(
+    let original = Message::new(
         NodeId::new(0).unwrap(),
-        CommandKind::Test,
-        CommandParams::new(),
+        MessageKind::Test,
+        MessageParams::new(),
     );
 
     let serialized = original.clone().serialize().unwrap();
-    let deserialized = Command::parse(&serialized).unwrap();
+    let deserialized = Message::parse(&serialized).unwrap();
 
     assert_eq!(deserialized, original);
 }
 
 #[test]
 fn deserialize_2() {
-    let original = Command::new(
+    let original = Message::new(
         NodeId::new(65).unwrap(),
-        CommandKind::DmAreaRead,
+        MessageKind::DmAreaRead,
         vec!['0', 'a'].into(),
     );
 
     let serialized = original.clone().serialize().unwrap();
-    let deserialized = Command::parse(&serialized).unwrap();
+    let deserialized = Message::parse(&serialized).unwrap();
 
     assert_eq!(deserialized, original);
 }

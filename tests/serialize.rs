@@ -1,11 +1,11 @@
-use hostlink::protocol::{fcs::fcs, Command, CommandKind, CommandParams, NodeId};
+use hostlink::protocol::{fcs::fcs, Message, MessageKind, MessageParams, NodeId};
 
 #[test]
 fn serialize_1() {
     let node = NodeId::new(0).unwrap();
-    let kind = CommandKind::Test;
-    let params = CommandParams::new();
-    let command = Command::new(node, kind, params);
+    let kind = MessageKind::Test;
+    let params = MessageParams::new();
+    let command = Message::new(node, kind, params);
 
     let serialized = command.serialize().unwrap();
     assert_eq!(
