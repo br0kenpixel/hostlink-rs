@@ -27,11 +27,13 @@ impl EasyCommand {
     }
 
     /// Construct a `StatusRead` command.
+    #[must_use]
     pub const fn make_status_read() -> Self {
         Self::StatusRead
     }
 
     /// Perform conversion into [`Command`](Command).
+    #[must_use]
     pub fn into_command(self, node: NodeId) -> Command {
         let kind = self.kind();
 
@@ -42,6 +44,7 @@ impl EasyCommand {
     }
 
     /// Get the command type.
+    #[must_use]
     pub const fn kind(&self) -> CommandKind {
         match self {
             Self::Test(..) => CommandKind::Test,

@@ -96,11 +96,13 @@ pub struct Command {
 
 impl Command {
     /// Creates a new command from the specified node ID and arguments.
+    #[must_use]
     pub const fn new(node: NodeId, kind: CommandKind, params: CommandParams) -> Self {
         Self { node, kind, params }
     }
 
     /// Creates a new command with no arguments from the specified node ID.
+    #[must_use]
     pub const fn new_with_empty_params(node: NodeId, kind: CommandKind) -> Self {
         Self {
             node,
@@ -178,6 +180,7 @@ impl Command {
 
 impl CommandParams {
     /// Creates an empty argument set.
+    #[must_use]
     pub const fn new() -> Self {
         Self(Vec::new())
     }
@@ -225,7 +228,8 @@ impl DerefMut for CommandParams {
 
 impl CommandKind {
     /// Returns the command code.
-    pub fn code(self) -> &'static str {
+    #[must_use]
+    pub const fn code(self) -> &'static str {
         match self {
             Self::IrSrAreaRead => "RR",
             Self::LrAreaRead => "RL",
@@ -320,6 +324,7 @@ impl NodeId {
     /// # Safety
     /// This function is only safe if the specified value is at most 99.
     /// Values above 99 will cause undefined behaviour.
+    #[must_use]
     pub const unsafe fn new_unchecked(value: u8) -> Self {
         Self(value)
     }

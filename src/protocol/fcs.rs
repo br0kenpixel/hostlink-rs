@@ -15,8 +15,8 @@ pub fn fcs(cmd_fcs_range: &str) -> Result<FcsBytes, Error> {
         fcs ^= byte;
     }
 
-    let first_four = (fcs & 0b11110000) >> 4;
-    let last_four = fcs & 0b00001111;
+    let first_four = (fcs & 0b1111_0000) >> 4;
+    let last_four = fcs & 0b0000_1111;
 
     Ok(FcsBytes(first_four, last_four))
 }
@@ -29,6 +29,7 @@ impl Display for FcsBytes {
 
 impl FcsBytes {
     /// Returns the FCS checksum bytes as a single numeric value.
+    #[must_use]
     pub const fn value(self) -> u8 {
         self.1 + (self.0 * 10)
     }
