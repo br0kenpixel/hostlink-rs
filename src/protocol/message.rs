@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-/// A Hotlink command type.
+/// A Hostlink command type.
 #[derive(Debug, Display, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessageKind {
     #[display(fmt = "IR/SR AREA READ")]
@@ -84,7 +84,7 @@ pub struct MessageParams(Vec<char>);
 #[display(fmt = "{:02}", "self.0")]
 pub struct NodeId(u8);
 
-/// A complete Hotlink command.
+/// A complete Hostlink command.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Message {
     /// Node ID

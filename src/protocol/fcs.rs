@@ -5,7 +5,7 @@ use std::fmt::Display;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FcsBytes(u8, u8);
 
-/// Calculates the FCS checksum from a serialized Hotlink command.
+/// Calculates the FCS checksum from a serialized Hostlink command.
 /// The input string must only contain characters which are actually needed for the checksum.
 /// If the input string contains unneeded characters, they will also be accounted into the checksum.
 pub fn fcs(cmd_fcs_range: &str) -> Result<FcsBytes, ProtocolError> {
