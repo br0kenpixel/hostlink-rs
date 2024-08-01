@@ -61,7 +61,6 @@ impl PlcDevice {
     }
 
     fn _send_commnad(&mut self, mut cmd: Command) -> Result<(), Error> {
-        dbg!(&cmd);
         cmd.set_node_id(self.node_id);
         self.writer.write_all(cmd.serialize()?.as_bytes())?;
         self.writer.flush()?;
