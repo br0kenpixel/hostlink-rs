@@ -14,4 +14,10 @@ pub enum Error {
 
     #[error("Failed to parse a UTF-8 string: {0}")]
     StringConversion(#[from] Utf8Error),
+
+    #[error("Device reported error: {0}")]
+    Device(#[from] DeviceError),
 }
+
+#[derive(Debug, Error)]
+pub enum DeviceError {}
