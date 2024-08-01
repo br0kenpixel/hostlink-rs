@@ -137,6 +137,10 @@ impl Command {
         Ok(buffer.into_boxed_str())
     }
 
+    pub fn set_node_id(&mut self, node: NodeId) {
+        self.node = node;
+    }
+
     pub fn parse(cmd: &str) -> Result<Self, Error> {
         let mut cmd_iter = cmd.chars();
 
