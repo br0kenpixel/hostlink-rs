@@ -1,9 +1,9 @@
-use hostlink::protocol::{Error, NodeId};
+use hostlink::protocol::{NodeId, ProtocolError};
 use std::ops::Deref;
 
 #[test]
 fn node_id_1() {
-    assert_eq!(NodeId::new(100), Err(Error::IllegalNodeId(100)));
+    assert_eq!(NodeId::new(100), Err(ProtocolError::IllegalNodeId(100)));
 }
 
 #[test]
