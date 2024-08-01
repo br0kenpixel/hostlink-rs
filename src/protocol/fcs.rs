@@ -23,7 +23,7 @@ pub fn fcs(cmd_fcs_range: &str) -> Result<FcsBytes, ProtocolError> {
 
 impl Display for FcsBytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.0, self.1)
+        write!(f, "{:X}{:X}", self.0, self.1)
     }
 }
 

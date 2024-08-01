@@ -128,6 +128,11 @@ impl Message {
         DeviceError::try_from(string.as_str())
     }
 
+    #[must_use]
+    pub fn check_device_error(&self) -> Option<DeviceError> {
+        self.clone().as_device_error().ok()?.to_result().err()
+    }
+
     /// Serializes the command into a string that can be sent to a PLC.
     pub fn serialize(self) -> Result<Box<str>, ProtocolError> {
         let mut buffer = String::with_capacity(10);

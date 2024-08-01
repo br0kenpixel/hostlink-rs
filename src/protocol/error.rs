@@ -1,3 +1,4 @@
+use crate::device::{responses::status::StatusParseError, DeviceError};
 use std::num::ParseIntError;
 use thiserror::Error;
 
@@ -45,4 +46,10 @@ pub enum Error {
 
     #[error("Invalid error code length")]
     ErrorCodeBadLength,
+
+    #[error("Device error: {0}")]
+    Device(#[from] DeviceError),
+
+    #[error("Device error: {0}")]
+    StatusParse(#[from] StatusParseError),
 }

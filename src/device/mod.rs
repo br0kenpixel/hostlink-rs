@@ -1,7 +1,9 @@
 mod error;
+pub mod responses;
 
-use crate::protocol::{Message, MessageKind, MessageParams, NodeId};
+use crate::protocol::{Message, MessageKind, MessageParams, NodeId, ProtocolError};
 pub use error::{DeviceError, Error};
+use responses::status::Status;
 pub use serialport::{DataBits, FlowControl, SerialPort, SerialPortBuilder, StopBits};
 use std::{
     io::{BufRead, BufReader, BufWriter, Write},
@@ -49,7 +51,6 @@ impl PlcDevice {
 
         self._send_commnad(command.clone())?;
         let response = self._await_response()?;
-        let response = Message::parse(&response)?;
 
         if response == command {
             return Ok(());
@@ -61,6 +62,31 @@ impl PlcDevice {
         unreachable!()
     }
 
+    pub fn status(&mut self) -> Result<Status, Error> {
+        let response = self._send_command_and_await_response(
+            Message::new_with_empty_params(self.node_id, MessageKind::StatusRead),
+            true,
+        )?;
+
+        let status = Status::try_from(response).map_err(ProtocolError::StatusParse)?;
+
+        Ok(status)
+    }
+
+    fn _send_command_and_await_response(
+        &mut self,
+        cmd: Message,
+        error_check: bool,
+    ) -> Result<Message, Error> {
+        self._send_commnad(cmd)?;
+
+        if error_check {
+            self._await_response_and_err_check()
+        } else {
+            self._await_response()
+        }
+    }
+
     fn _send_commnad(&mut self, mut cmd: Message) -> Result<(), Error> {
         cmd.set_node_id(self.node_id);
         self.writer.write_all(cmd.serialize()?.as_bytes())?;
@@ -69,12 +95,23 @@ impl PlcDevice {
         Ok(())
     }
 
-    fn _await_response(&mut self) -> Result<Box<str>, Error> {
+    fn _await_response_and_err_check(&mut self) -> Result<Message, Error> {
+        let msg = self._await_response()?;
+
+        if let Some(error) = msg.check_device_error() {
+            return Err(Error::Device(error));
+        }
+
+        Ok(msg)
+    }
+
+    fn _await_response(&mut self) -> Result<Message, Error> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\r', &mut buffer)?;
 
         let string = std::str::from_utf8(&buffer)?;
+        let msg = Message::parse(string)?;
 
-        Ok(string.into())
+        Ok(msg)
     }
 }
