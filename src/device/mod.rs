@@ -8,8 +8,7 @@ use std::{
     time::Duration,
 };
 
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(3);
-pub const RCV_BUFSIZE: usize = 128;
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug)]
 pub struct PlcDevice {
