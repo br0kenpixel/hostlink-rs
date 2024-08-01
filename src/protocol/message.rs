@@ -112,6 +112,16 @@ impl Message {
         }
     }
 
+    #[must_use]
+    pub const fn kind(&self) -> MessageKind {
+        self.kind
+    }
+
+    #[must_use]
+    pub const fn params(&self) -> &MessageParams {
+        &self.params
+    }
+
     pub fn as_device_error(self) -> Result<DeviceError, ProtocolError> {
         let string: String = self.params.iter().collect();
 
