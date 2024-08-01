@@ -18,7 +18,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libudev-dev
     - name: Generate docs
       run: |
-        cargo doc
+        cargo doc --no-deps
         git worktree add docs
         git config user.name "Deploy from CI"
         git config user.email ""
