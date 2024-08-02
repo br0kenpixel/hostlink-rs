@@ -103,7 +103,7 @@ impl StatusMode {
     /// // and the second byte as the next 4 bits.
     /// let mode_byte = (first_byte & 0b1111_0000) | (second_byte & 0b0000_1111);
     ///
-    /// assert_eq!(mode_byte, 50);
+    /// assert_eq!(mode_byte, 0b0011_0010 /* or 50 / 0x32 */);
     /// let status = StatusMode::parse(mode_byte).unwrap();
     ///
     /// assert_eq!(status, StatusMode::Run);
