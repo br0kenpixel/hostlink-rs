@@ -3,6 +3,7 @@ mod error;
 /// FCS Checksum calculation and types.
 pub mod fcs;
 mod message;
+/// Response types.
 pub mod responses;
 
 pub use easy::EasyCommand;

@@ -2,14 +2,20 @@ use crate::protocol::Message;
 use derive_more::Display;
 use thiserror::Error;
 
+/// Represents the status of a PLC device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Status {
-    fals: bool,
-    error: bool,
-    mode: StatusMode,
-    memory: StatusMemory,
+    /// FALS *(Failure Alarm And Reset)* generated
+    pub fals: bool,
+    /// Fatal error generated
+    pub error: bool,
+    /// Operation mode
+    pub mode: StatusMode,
+    /// Memory status
+    pub memory: StatusMemory,
 }
 
+/// An operation mode.
 #[derive(Debug, Display, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum StatusMode {
     Program,
@@ -17,6 +23,7 @@ pub enum StatusMode {
     Monitor,
 }
 
+/// Memory status.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StatusMemory {
     /// Size of program memory in bytes (if available).
@@ -25,16 +32,22 @@ pub struct StatusMemory {
     pub write_protection: bool,
 }
 
+/// An error that can occur while trying to parse `Status`.
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub enum StatusParseError {
+    /// Missing mode bytes
     #[error("Missing mode bytes")]
     MissingMode,
+    /// Missing memory status bytes
     #[error("Missing memory status bytes")]
     MissingMemory,
+    /// Message contains an error
     #[error("Message contains an error")]
     UnparsableMessage,
+    /// Mode bits could not be mapped to any known operation mode
     #[error("Unexpected mode bits: '{0}', '{1}'")]
     UnknownMode(bool, bool),
+    /// Memory size bits could not be mapped to any known memory size.
     #[error("Unexpected memory size bits: '{0}', '{1}', '{2}'")]
     UnknownMemorySize(bool, bool, bool),
 }
@@ -77,6 +90,24 @@ impl TryFrom<Message> for Status {
 }
 
 impl StatusMode {
+    /// Parse the operation mode from a byte obtained using a [`StatusRead`](crate::protocol::MessageKind::StatusRead) command.
+    /// # Example
+    /// ```rust
+    /// use hostlink::protocol::responses::status::StatusMode;
+    ///
+    /// // These are the bytes you'd get from a StatusRead command if the PLC is in RUN mode.
+    /// let first_byte = 0b0011_0000;
+    /// let second_byte = 0b0011_0010;
+    ///
+    /// // We need to create a single byte by using the first byte as the first 4 bits
+    /// // and the second byte as the next 4 bits.
+    /// let mode_byte = (first_byte & 0b1111_0000) | (second_byte & 0b0000_1111);
+    ///
+    /// assert_eq!(mode_byte, 50);
+    /// let status = StatusMode::parse(mode_byte).unwrap();
+    ///
+    /// assert_eq!(status, StatusMode::Run);
+    /// ```
     pub const fn parse(byte: u8) -> Result<Self, StatusParseError> {
         let first = (byte & 0b0000_0010) > 0;
         let second = (byte & 0b0000_0001) > 0;
@@ -91,6 +122,7 @@ impl StatusMode {
 }
 
 impl StatusMemory {
+    /// Parse the memory status from a byte obtained using a [`StatusRead`](crate::protocol::MessageKind::StatusRead) command.
     pub const fn parse(byte: u8) -> Result<Self, StatusParseError> {
         let first = (byte & 0b0100_0000) > 0;
         let second = (byte & 0b0010_0000) > 0;
