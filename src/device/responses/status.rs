@@ -77,9 +77,9 @@ impl StatusMode {
         let second = (byte & 0b0000_0001) > 0;
 
         match (first, second) {
-            (false, false) => Ok(StatusMode::Program),
-            (true, false) => Ok(StatusMode::Run),
-            (true, true) => Ok(StatusMode::Monitor),
+            (false, false) => Ok(Self::Program),
+            (true, false) => Ok(Self::Run),
+            (true, true) => Ok(Self::Monitor),
             _ => Err(StatusParseError::UnknownMode(first, second)),
         }
     }
