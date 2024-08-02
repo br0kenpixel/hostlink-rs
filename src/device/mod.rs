@@ -1,9 +1,8 @@
 mod error;
-pub mod responses;
 
+use crate::protocol::responses::status::Status;
 use crate::protocol::{Message, MessageKind, MessageParams, NodeId, ProtocolError};
 pub use error::{DeviceError, Error};
-use responses::status::Status;
 pub use serialport::{DataBits, FlowControl, SerialPort, SerialPortBuilder, StopBits};
 use std::{
     io::{BufRead, BufReader, BufWriter, Write},

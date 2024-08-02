@@ -1,4 +1,5 @@
-use crate::device::{responses::status::StatusParseError, DeviceError};
+use super::responses::status::StatusParseError;
+use crate::device::DeviceError;
 use std::num::ParseIntError;
 use thiserror::Error;
 
