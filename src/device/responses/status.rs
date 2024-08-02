@@ -58,7 +58,7 @@ impl TryFrom<Message> for Status {
         let memory = params_iter
             .next()
             .zip(params_iter.next())
-            .map(|(first, second)| (dbg!(first) & 0b1111_0000) | (dbg!(second) & 0b0000_1111))
+            .map(|(first, second)| (first & 0b1111_0000) | (second & 0b0000_1111))
             .ok_or(Self::Error::MissingMemory)?;
         let memory = StatusMemory::parse(memory)?;
 
