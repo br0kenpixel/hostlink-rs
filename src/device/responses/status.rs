@@ -19,8 +19,10 @@ pub enum StatusMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StatusMemory {
-    size: Option<u16>,
-    write_protection: bool,
+    /// Size of program memory in bytes (if available).
+    pub size: Option<u16>,
+    /// Whether the program memory is write protected.
+    pub write_protection: bool,
 }
 
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
@@ -53,6 +55,9 @@ impl TryFrom<Message> for Status {
             .zip(params_iter.next())
             .map(|(first, second)| (first & 0b1111_0000) | (second & 0b0000_1111))
             .ok_or(Self::Error::MissingMode)?;
+
+        let fals = (mode_byte & 0b1000_0000) > 0;
+        let error = (mode_byte & 0b0001_0000) > 0;
         let mode = StatusMode::parse(mode_byte)?;
 
         let memory = params_iter
@@ -63,8 +68,8 @@ impl TryFrom<Message> for Status {
         let memory = StatusMemory::parse(memory)?;
 
         Ok(Self {
-            fals: (mode_byte & 0b1000_0000) > 0,
-            error: (mode_byte & 0b0001_0000) > 0,
+            fals,
+            error,
             mode,
             memory,
         })
@@ -96,6 +101,7 @@ impl StatusMemory {
             (false, false, false) => None,
             (false, false, true) => Some(4000),
             (false, true, false) => Some(8000),
+            (true, false, false) => Some(7200),
             _ => return Err(StatusParseError::UnknownMemorySize(first, second, third)),
         };
 
