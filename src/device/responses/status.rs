@@ -48,12 +48,11 @@ impl TryFrom<Message> for Status {
         dbg!(&value);
 
         // skip response code
-        let mut params_iter = value.params().iter().skip(2);
+        let mut params_iter = value.params().iter().skip(2).map(|ch| *ch as u8);
 
         let mode_byte = params_iter
             .next()
             .zip(params_iter.next())
-            .map(|(first, second)| (*first as u8, *second as u8))
             .map(|(first, second)| (first & 0b1111_0000) | (second & 0b0000_1111))
             .ok_or(Self::Error::MissingMode)?;
         let mode = StatusMode::parse(mode_byte)?;
@@ -61,7 +60,6 @@ impl TryFrom<Message> for Status {
         let memory = params_iter
             .next()
             .zip(params_iter.next())
-            .map(|(first, second)| (*first as u8, *second as u8))
             .map(|(first, second)| (dbg!(first) & 0b1111_0000) | (dbg!(second) & 0b0000_1111))
             .ok_or(Self::Error::MissingMemory)?;
         println!("{memory:08b}");
