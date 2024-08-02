@@ -4,6 +4,8 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Status {
+    fals: bool,
+    error: bool,
     mode: StatusMode,
     memory: StatusMemory,
 }
@@ -15,10 +17,10 @@ pub enum StatusMode {
     Monitor,
 }
 
-#[derive(Debug, Display, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum StatusMemory {
-    Rom,
-    Ram,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct StatusMemory {
+    size: Option<u16>,
+    write_protection: bool,
 }
 
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
@@ -29,10 +31,10 @@ pub enum StatusParseError {
     MissingMemory,
     #[error("Message contains an error")]
     UnparsableMessage,
-    #[error("Unknown mode: '{0}{1}'")]
-    UnknownMode(char, char),
-    #[error("Unknown memory staus: '{0}{1}'")]
-    UnknownMemory(char, char),
+    #[error("Unexpected mode bits: '{0}', '{1}'")]
+    UnknownMode(bool, bool),
+    #[error("Unexpected memory size bits: '{0}', '{1}', '{2}'")]
+    UnknownMemorySize(bool, bool, bool),
 }
 
 impl TryFrom<Message> for Status {
@@ -43,40 +45,68 @@ impl TryFrom<Message> for Status {
             return Err(Self::Error::UnparsableMessage);
         }
 
+        dbg!(&value);
+
+        // skip response code
         let mut params_iter = value.params().iter().skip(2);
-        let mode = params_iter
+
+        let mode_byte = params_iter
             .next()
             .zip(params_iter.next())
-            .map(|(first, second)| StatusMode::parse(*first, *second))
-            .ok_or(Self::Error::MissingMode)??;
+            .map(|(first, second)| (*first as u8, *second as u8))
+            .map(|(first, second)| (first & 0b1111_0000) | (second & 0b0000_1111))
+            .ok_or(Self::Error::MissingMode)?;
+        let mode = StatusMode::parse(mode_byte)?;
 
         let memory = params_iter
             .next()
             .zip(params_iter.next())
-            .map(|(first, second)| StatusMemory::parse(*first, *second))
-            .ok_or(Self::Error::MissingMemory)??;
+            .map(|(first, second)| (*first as u8, *second as u8))
+            .map(|(first, second)| (dbg!(first) & 0b1111_0000) | (dbg!(second) & 0b0000_1111))
+            .ok_or(Self::Error::MissingMemory)?;
+        println!("{memory:08b}");
+        let memory = StatusMemory::parse(memory)?;
 
-        Ok(Self { mode, memory })
+        Ok(Self {
+            fals: (mode_byte & 0b1000_0000) > 0,
+            error: (mode_byte & 0b0001_0000) > 0,
+            mode,
+            memory,
+        })
     }
 }
 
 impl StatusMode {
-    pub const fn parse(first: char, second: char) -> Result<Self, StatusParseError> {
+    pub const fn parse(byte: u8) -> Result<Self, StatusParseError> {
+        let first = (byte & 0b0000_0010) > 0;
+        let second = (byte & 0b0000_0001) > 0;
+
         match (first, second) {
-            ('0', '0') => Ok(Self::Program),
-            ('0', '2') => Ok(Self::Run),
-            ('0', '3') => Ok(Self::Monitor),
+            (false, false) => Ok(StatusMode::Program),
+            (true, false) => Ok(StatusMode::Run),
+            (true, true) => Ok(StatusMode::Monitor),
             _ => Err(StatusParseError::UnknownMode(first, second)),
         }
     }
 }
 
 impl StatusMemory {
-    pub const fn parse(first: char, second: char) -> Result<Self, StatusParseError> {
-        match (first, second) {
-            ('2' | '4', '8') => Ok(Self::Rom),
-            ('2' | '4', '0') => Ok(Self::Ram),
-            _ => Err(StatusParseError::UnknownMemory(first, second)),
-        }
+    pub const fn parse(byte: u8) -> Result<Self, StatusParseError> {
+        let first = (byte & 0b0100_0000) > 0;
+        let second = (byte & 0b0010_0000) > 0;
+        let third = (byte & 0b0001_0000) > 0;
+        let write_protection = (byte & 0b0000_1000) == 0;
+
+        let program_area = match (first, second, third) {
+            (false, false, false) => None,
+            (false, false, true) => Some(4000),
+            (false, true, false) => Some(8000),
+            _ => return Err(StatusParseError::UnknownMemorySize(first, second, third)),
+        };
+
+        Ok(Self {
+            size: program_area,
+            write_protection,
+        })
     }
 }
