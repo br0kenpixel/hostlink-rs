@@ -45,8 +45,6 @@ impl TryFrom<Message> for Status {
             return Err(Self::Error::UnparsableMessage);
         }
 
-        dbg!(&value);
-
         // skip response code
         let mut params_iter = value.params().iter().skip(2).map(|ch| *ch as u8);
 
@@ -62,7 +60,6 @@ impl TryFrom<Message> for Status {
             .zip(params_iter.next())
             .map(|(first, second)| (dbg!(first) & 0b1111_0000) | (dbg!(second) & 0b0000_1111))
             .ok_or(Self::Error::MissingMemory)?;
-        println!("{memory:08b}");
         let memory = StatusMemory::parse(memory)?;
 
         Ok(Self {
