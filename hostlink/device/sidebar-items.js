@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DataBits","DeviceError","Error","FlowControl","StopBits"],"struct":["PlcDevice","SerialPortBuilder"],"trait":["SerialPort"]};
